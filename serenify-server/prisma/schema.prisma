@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+  ULTIMATE
+}
+
+enum Mood {
+  HAPPY
+  CALM
+  NEUTRAL
+  SAD
+  ANXIOUS
+}
+
+enum ExerciseCategory {
+  BREATHING
+  MEDITATION
+  GROUNDING
+  JOURNALING
+  SLEEP
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum ChecklistFrequency {
+  DAILY
+  WEEKLY
+}
+
+enum AppointmentType {
+  VIDEO
+  CHAT
+  PHONE
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id              String          @id @default(uuid())
+  name            String
+  email           String          @unique
+  passwordHash    String
+  plan            Plan            @default(FREE)
+  avatar          String?
+  notificationPrefs Json?
+  reminderTime    String?
+  streak          Int             @default(0)
+  lastLoginAt     DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  moodLogs        MoodLog[]
+  exerciseLogs    ExerciseLog[]
+  chatSessions    ChatSession[]
+  checklistItems  ChecklistItem[]
+  checklistLogs   ChecklistLog[]
+  appointments    Appointment[]
+  subscription    Subscription?
+  invoices        Invoice[]
+  userQuotes      UserQuote[]
+  refreshTokens   RefreshToken[]
+  resetTokens     PasswordResetToken[]
+}
+
+model MoodLog {
+  id        String   @id @default(uuid())
+  userId    String
+  mood      Mood
+  note      String?
+  date      DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Exercise {
+  id           String            @id @default(uuid())
+  title        String
+  category     ExerciseCategory
+  duration     Int
+  difficulty   Int
+  description  String
+  content      Json
+  thumbnailUrl String?
+  isSeeded     Boolean           @default(false)
+  logs         ExerciseLog[]
+}
+
+model ExerciseLog {
+  id              String   @id @default(uuid())
+  userId          String
+  exerciseId      String
+  completedAt     DateTime @default(now())
+  durationMinutes Int
+  notes           String?
+  user            User     @relation(fields: [userId], references: [id])
+  exercise        Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([userId])
+  @@index([exerciseId])
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  userId    String
+  title     String
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id])
+  messages  ChatMessage[]
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String     @id @default(uuid())
+  sessionId String
+  role      ChatRole
+  content   String
+  createdAt DateTime   @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+model ChecklistItem {
+  id         String             @id @default(uuid())
+  userId     String
+  label      String
+  emoji      String
+  frequency  ChecklistFrequency
+  isDefault  Boolean            @default(false)
+  isActive   Boolean            @default(true)
+  streak     Int                @default(0)
+  createdAt  DateTime           @default(now())
+  user       User               @relation(fields: [userId], references: [id])
+  logs       ChecklistLog[]
+
+  @@index([userId])
+}
+
+model ChecklistLog {
+  id          String   @id @default(uuid())
+  itemId      String
+  userId      String
+  completedAt DateTime @default(now())
+  item        ChecklistItem @relation(fields: [itemId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([itemId])
+  @@index([userId])
+}
+
+model Therapist {
+  id           String   @id @default(uuid())
+  name         String
+  specialty    String
+  bio          String
+  avatarUrl    String?
+  price        Int
+  rating       Float
+  experience   Int
+  availability Json
+  appointments Appointment[]
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  userId      String
+  therapistId String
+  datetime    DateTime
+  type        AppointmentType
+  status      AppointmentStatus
+  notes       String?
+  user        User              @relation(fields: [userId], references: [id])
+  therapist   Therapist         @relation(fields: [therapistId], references: [id])
+
+  @@index([userId])
+  @@index([therapistId])
+}
+
+model Subscription {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  plan              Plan
+  stripeCustomerId  String
+  stripeSubId       String
+  status            String
+  currentPeriodEnd  DateTime
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Invoice {
+  id              String   @id @default(uuid())
+  userId          String
+  amount          Int
+  currency        String
+  status          String
+  stripeInvoiceId String
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Quote {
+  id       String      @id @default(uuid())
+  text     String
+  author   String
+  category String
+  users    UserQuote[]
+}
+
+model UserQuote {
+  id      String   @id @default(uuid())
+  userId  String
+  quoteId String
+  savedAt DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id])
+  quote   Quote    @relation(fields: [quoteId], references: [id])
+
+  @@index([userId])
+  @@index([quoteId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  otpHash   String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
