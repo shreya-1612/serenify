@@ -165,9 +165,10 @@ Bachelor of Technology (Computer Science & Engineering)
 
 Passionate about Software Development and  AI-driven Solutions.
 
-LinkedIn: Add Your LinkedIn Profile
+LinkedIn: linkedin.com/in/shreya-shinde 
 
-GitHub: Add Your GitHub Profile
+GitHub: github.com/shreya-1612
+
 
 ---
 
