@@ -78,7 +78,6 @@ Serenify is a full-stack mental health and wellness platform designed to help us
 * TypeScript
 * Vite
 * Tailwind CSS
-* Zustand
 
 ### Backend
 
